@@ -1,175 +1,213 @@
 <html>
-<head>
+  <head>
     <title>GDCM Parser</title>
     <link
-            rel="stylesheet"
-            href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
-            integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
-            crossorigin="anonymous"
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+      integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+      crossorigin="anonymous"
     />
     <script type="text/javascript" src="gdcmconv.js"></script>
 
     <style>
-        /* Sticky footer styles
+      /* Sticky footer styles
   -------------------------------------------------- */
-        html {
-            position: relative;
-            min-height: 100%;
-        }
-        body {
-            margin-bottom: 60px; /* Margin bottom by footer height */
-        }
-        .footer {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 60px; /* Set the fixed height of the footer here */
-            line-height: 60px; /* Vertically center the text there */
-            background-color: #f5f5f5;
-        }
+      html {
+        position: relative;
+        min-height: 100%;
+      }
+      body {
+        margin-bottom: 60px; /* Margin bottom by footer height */
+      }
+      .footer {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 60px; /* Set the fixed height of the footer here */
+        line-height: 60px; /* Vertically center the text there */
+        background-color: #f5f5f5;
+      }
 
-        /* Custom page CSS
+      /* Custom page CSS
   -------------------------------------------------- */
-        /* Not required for template or sticky footer method. */
+      /* Not required for template or sticky footer method. */
 
-        .container {
-            width: auto;
-            max-width: 680px;
-            padding: 0 15px;
-        }
+      .container {
+        width: auto;
+        max-width: 680px;
+        padding: 0 15px;
+      }
     </style>
-</head>
-<body>
-<main role="main" class="container">
-    <h1 class="mt-5">GDCMconv web browser example</h1>
-    <p class="lead">This is the GDCMconv app ported to a browser. This will decompress your dicom.</p>
-    <form>
+  </head>
+  <body>
+    <main role="main" class="container">
+      <h1 class="mt-5">GDCMconv web browser example</h1>
+      <p class="lead">
+        This is the GDCMconv app ported to a browser. This will decompress your
+        dicom.
+      </p>
+      <form>
         <div class="custom-file">
-            <input
-                    type="file"
-                    id="files"
-                    name="files[]"
-                    multiple
-                    class="custom-file-input"
-                    id="validatedCustomFile"
-                    required
-            />
-            <label class="custom-file-label" for="validatedCustomFile"
+          <input
+            type="file"
+            id="files"
+            name="files[]"
+            multiple
+            class="custom-file-input"
+            id="validatedCustomFile"
+            required
+          />
+          <label class="custom-file-label" for="validatedCustomFile"
             >Choose file...</label
-            >
+          >
         </div>
-    </form>
-    <output id="list"></output>
-</main>
-<footer class="footer">
-    <div class="container">
+      </form>
+      <output id="list"></output>
+    </main>
+    <footer class="footer">
+      <div class="container">
         <span class="text-muted">GDCM - Alexandre Tolstenko</span>
-    </div>
-</footer>
-<script>
-    if (
+      </div>
+    </footer>
+    <script>
+      if (
         !window.File &&
         !window.FileReader &&
         !window.FileList &&
         !window.Blob
-    ) {
+      ) {
         alert("The File APIs are not fully supported in this browser.");
-    }
+      }
 
-    function handleFileSelect(evt) {
+      function compressDicom(fileData) {
+        var dicomoriginal = convertToUint8Array(fileData);
+        var memfs = [
+          {
+            name: "input.dcm",
+            data: dicomoriginal,
+          },
+        ];
+
+        console.log("memfs", memfs);
+
+        var result = gdcmFunc({
+          MEMFS: memfs,
+          arguments: [
+            // "--lossy",
+            "--jpeg",
+            "-q",
+            80,
+            "-i",
+            "input.dcm",
+            "-o",
+            "output.dcm",
+          ],
+        });
+
+        console.log("result", result);
+
+        console.log(
+          "input size: " +
+            dicomoriginal.length +
+            ", output size: " +
+            result.MEMFS[0].data.length
+        );
+        console.log("%c Line:117 🍇 result", "color:#fca650", result);
+
+        return result.MEMFS[0].data;
+      }
+
+      function handleFileSelect(evt) {
         var files = evt.target.files; // FileList object
         showFiles(files);
 
-        var reader = new FileReader();
+        // 清除之前的下载链接
+        const downloadList = document.createElement("div");
+        downloadList.id = "download-list";
+        document.getElementById("list").appendChild(downloadList);
 
-        // Closure to capture the file information.
-        reader.onload = (function(theFile) {
-            return function(e) {
-                var dicomoriginal = convertToUint8Array(e.target.result);
-                var memfs = [
-                    {
-                        name: "input.dcm",
-                        data: dicomoriginal
-                    }
-                ];
+        // 处理每个文件
+        Array.from(files).forEach((file, index) => {
+          const reader = new FileReader();
 
-                console.log("memfs", memfs);
+          reader.onload = (e) => {
+            try {
+              const compressedFile = compressDicom(e.target.result);
+              showLinkToDownload(compressedFile, file.name);
+            } catch (error) {
+              console.error(`处理文件 ${file.name} 时发生错误:`, error);
+              showError(file.name, error);
+            }
+          };
 
-                var result = gdcmFunc({
-                    MEMFS: memfs,
-                    arguments: ["-i", "input.dcm", "-o", "output.dcm", "-w"]
-                });
+          reader.readAsArrayBuffer(file);
+        });
+      }
 
-                console.log("result", result);
-
-                console.log(
-                    "input size: " +
-                    dicomoriginal.length +
-                    ", output size: " +
-                    result.MEMFS[0].data.length
-                );
-
-                showLinkToDownload(result.MEMFS[0].data);
-            };
-        })(files[0]);
-
-        // Read in the image file as a data URL.
-        reader.readAsArrayBuffer(files[0]);
-    }
-
-    function showFiles(files) {
+      function showFiles(files) {
         var output = [];
         for (var i = 0, f; (f = files[i]); i++) {
-            output.push(
-                "<li class='list-group-item'><strong>",
-                escape(f.name),
-                "</strong> (",
-                f.type || "n/a",
-                ") - ",
-                f.size,
-                " bytes, last modified: ",
-                f.lastModifiedDate.toLocaleDateString(),
-                "</li>"
-            );
+          output.push(
+            "<li class='list-group-item'><strong>",
+            escape(f.name),
+            "</strong> (",
+            f.type || "n/a",
+            ") - ",
+            f.size,
+            " bytes, last modified: ",
+            f.lastModifiedDate.toLocaleDateString(),
+            "</li>"
+          );
         }
         document.getElementById("list").innerHTML =
-            "<ul class='list-group'>" + output.join("") + "</ul>";
-    }
+          "<ul class='list-group'>" + output.join("") + "</ul>";
+      }
 
-    function showLinkToDownload(fileArrayBuffer) {
+      function showLinkToDownload(fileArrayBuffer, originalFileName) {
+        const downloadList = document.getElementById("download-list");
+
+        const container = document.createElement("div");
+        container.className = "mt-2";
+
         const link = document.createElement("a");
-        link.text = "output.dcm - " + fileArrayBuffer.length + " bytes";
-        link.classList.add("btn");
-        link.classList.add("btn-primary");
-
-        var $list = document.getElementById('list');
-
-        $list.appendChild(link);
+        const compressedFileName = `compressed_${originalFileName}`;
+        link.text = `${compressedFileName} - ${fileArrayBuffer.length} bytes`;
+        link.classList.add("btn", "btn-primary", "mr-2");
 
         const blob = new Blob([fileArrayBuffer], { type: "application/dicom" });
-        const objectURL = URL.createObjectURL(blob);
-
-        link.href = objectURL;
         link.href = URL.createObjectURL(blob);
-        link.download = "output.dcm";
-    }
+        link.download = compressedFileName;
 
-    function convertToUint8Array(data) {
+        container.appendChild(link);
+        downloadList.appendChild(container);
+      }
+
+      function showError(fileName, error) {
+        const downloadList = document.getElementById("download-list");
+
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "alert alert-danger mt-2";
+        errorDiv.textContent = `处理文件 ${fileName} 失败: ${error.message}`;
+
+        downloadList.appendChild(errorDiv);
+      }
+
+      function convertToUint8Array(data) {
         if (Array.isArray(data) || data instanceof ArrayBuffer) {
-            data = new Uint8Array(data);
+          data = new Uint8Array(data);
         } else if (!data) {
-            // `null` for empty files.
-            data = new Uint8Array(0);
+          // `null` for empty files.
+          data = new Uint8Array(0);
         } else if (!(data instanceof Uint8Array)) {
-            // Avoid unnecessary copying.
-            data = new Uint8Array(data.buffer);
+          // Avoid unnecessary copying.
+          data = new Uint8Array(data.buffer);
         }
         return data;
-    }
+      }
 
-    document
+      document
         .getElementById("files")
         .addEventListener("change", handleFileSelect, false);
-</script>
-</body>
+    </script>
+  </body>
 </html>

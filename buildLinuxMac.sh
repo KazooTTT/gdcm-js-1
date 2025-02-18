@@ -65,15 +65,15 @@ sleep 1
 mkdir -p downloads
 cd downloads
 ${GIT} clone https://github.com/emscripten-core/emsdk.git
-${WGET} -c -nc https://github.com/malaterre/GDCM/archive/v2.8.8.tar.gz -O gdcm.tar.gz
+${WGET} -c -nc https://github.com/malaterre/GDCM/archive/v3.0.24.tar.gz -O gdcm.tar.gz
 
 echo  "Decompressing GDCM"
 sleep 1
 
 ${TAR} -xvzf gdcm.tar.gz
 mkdir -p gdcm
-mv -f GDCM-2.8.8/* gdcm
-rm -rf GDCM-2.8.8
+mv -f GDCM-3.0.24/* gdcm
+rm -rf GDCM-3.0.24
 
 #cd downloads
 #md emsdk

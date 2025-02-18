@@ -1,10 +1,17 @@
 var fs = require("fs");
 var gdcm = require("./app.js");
 
-var dicomoriginal = new Uint8Array(fs.readFileSync('data/deflated.dcm'));
-var memfs = [{name: "input.dcm", data: dicomoriginal}];
-var args = ["-i", "input.dcm", "-o", "output.dcm", "-w"];
+var dicomoriginal = new Uint8Array(fs.readFileSync("0000.dcm"));
+var memfs = [{ name: "input.dcm", data: dicomoriginal }];
 
-var result = gdcm.gdcmconv({MEMFS:memfs, arguments:args});
+// 先查看文件信息
+gdcm.gdcmconv({ MEMFS: memfs, arguments: ["-i", "input.dcm"] });
 
-console.log("input size: " + dicomoriginal.length + ", output size: " + result.MEMFS[0].data.length);
+var result = gdcm.gdcmconv({
+  MEMFS: memfs,
+  arguments: ["-i", "input.dcm", "-o", "output.dcm"],
+});
+
+console.log("%c Line:11 🍖 result", "color:#2eafb0", result);
+
+fs.writeFileSync("output.dcm", result.MEMFS[0].data);
