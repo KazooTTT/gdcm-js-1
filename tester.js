@@ -1,5 +1,5 @@
-var fs = require("fs");
-var gdcm = require("./app.js");
+import fs from "fs";
+import gdcm from "./app.js";
 
 var dicomoriginal = new Uint8Array(fs.readFileSync("0000.dcm"));
 var memfs = [{ name: "input.dcm", data: dicomoriginal }];
@@ -14,4 +14,4 @@ var result = gdcm.gdcmconv({
 
 console.log("%c Line:11 🍖 result", "color:#2eafb0", result);
 
-fs.writeFileSync("output.dcm", result.MEMFS[0].data);
+fs.writeFileSync("output1.dcm", result.MEMFS[0].data);

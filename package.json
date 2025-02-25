@@ -4,7 +4,8 @@
   "description": "GDCM from Malaterre ported to js",
   "main": "app.js",
   "scripts": {
-    "test": "node tester.js"
+    "test": "node tester.js",
+    "start": "node server.js"
   },
   "repository": {
     "type": "git",
@@ -24,5 +25,11 @@
   "bugs": {
     "url": "https://github.com/InfiniBrains/gdcm-js/issues"
   },
-  "homepage": "https://github.com/InfiniBrains/gdcm-js#readme"
+  "homepage": "https://github.com/InfiniBrains/gdcm-js#readme",
+  "type": "module",
+  "dependencies": {
+    "@hono/node-server": "^1.0.0",
+    "hono": "^3.0.0",
+    "jszip": "^3.10.1"
+  }
 }
